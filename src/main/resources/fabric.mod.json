@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "servermod",
+  "version": "${version}",
+  "name": "Server Mod",
+  "description": "Die tolle Mod für den Server",
+  "authors": [
+    "Fynn93"
+  ],
+  "contact": {
+    "website": "fynn93.de",
+    "repo": "https://github.com/Fynn93/ServerMod"
+  },
+  "license": "MIT",
+  "icon": "assets/servermod/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "de.fynn93.servermod.ServerMod"
+    ]
+  },
+  "mixins": [
+    "servermod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
