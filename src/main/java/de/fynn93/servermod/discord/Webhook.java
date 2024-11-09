@@ -4,19 +4,36 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 public class Webhook {
-    public String endpoint;
+    private final String endpoint;
+    private final Queue<Message> messageQueue;
 
     public Webhook(String endpoint) {
         this.endpoint = endpoint;
+        messageQueue = new java.util.LinkedList<>();
     }
 
-    public CompletableFuture<Void> send(Message message) {
+    public void addToQueue(Message message) {
+        messageQueue.add(message);
+    }
+
+    public void sendQueue() {
+        send(messageQueue.poll());
+    }
+
+    public void send(Message message) {
+        if (message == null) {
+            System.out.println("Message is null.");
+            CompletableFuture.completedFuture(null);
+            return;
+        }
         if (endpoint.isEmpty()) {
             System.out.println("Webhook endpoint is empty.");
-            return CompletableFuture.completedFuture(null);
+            CompletableFuture.completedFuture(null);
+            return;
         }
 
         HttpClient client = HttpClient.newHttpClient();
@@ -32,10 +49,18 @@ public class Webhook {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     if (response.statusCode() == 204) {
                         System.out.println("Message sent successfully.");
+                    } else if (response.statusCode() == 429) {
+                        System.out.println("Rate limited. Retrying in " + response.headers().firstValue("Retry-After").orElse("0") + "s.");
+                        try {
+                            Thread.sleep(Long.parseLong(response.headers().firstValue("Retry-After").orElse("0")) * 1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        send(message);
                     } else {
                         System.out.println("Failed to send message: " + response.statusCode());
                         System.out.println("Response: " + response.body());
