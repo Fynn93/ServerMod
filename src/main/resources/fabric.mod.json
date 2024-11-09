@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "icon": "assets/servermod/icon.png",
+  "accessWidener": "servermod.accesswidener",
   "environment": "server",
   "entrypoints": {
     "main": [

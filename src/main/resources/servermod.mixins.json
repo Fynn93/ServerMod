@@ -9,7 +9,10 @@
     "EntityMixin",
     "HopperBlockEntityMixin",
     "ItemMixin",
-    "LeashableMixin"
+    "LanguageMixin",
+    "LeashableMixin",
+    "MinecraftServerMixin",
+    "ServerGamePacketListenerImplMixin"
   ],
   "injectors": {
     "defaultRequire": 1
