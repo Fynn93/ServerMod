@@ -1,5 +1,8 @@
 package de.fynn93.servermod.discord;
 
+import com.mojang.logging.LogUtils;
+
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,12 +24,14 @@ public class Webhook {
     }
 
     public void sendQueue() {
+        if (messageQueue.isEmpty()) return;
         send(messageQueue.poll());
     }
 
+    private final HttpClient client = HttpClient.newHttpClient();
+
     public void send(Message message) {
         if (message == null) {
-            System.out.println("Message is null.");
             CompletableFuture.completedFuture(null);
             return;
         }
@@ -35,8 +40,6 @@ public class Webhook {
             CompletableFuture.completedFuture(null);
             return;
         }
-
-        HttpClient client = HttpClient.newHttpClient();
 
         String jsonPayload = String.format(
                 "{\"content\": \"%s\", \"username\": \"%s\", \"avatar_url\": \"%s\"}",
@@ -49,26 +52,21 @@ public class Webhook {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
 
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    if (response.statusCode() == 204) {
-                        System.out.println("Message sent successfully.");
-                    } else if (response.statusCode() == 429) {
-                        System.out.println("Rate limited. Retrying in " + response.headers().firstValue("Retry-After").orElse("0") + "s.");
-                        try {
-                            Thread.sleep(Long.parseLong(response.headers().firstValue("Retry-After").orElse("0")) * 1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        send(message);
-                    } else {
-                        System.out.println("Failed to send message: " + response.statusCode());
-                        System.out.println("Response: " + response.body());
-                    }
-                })
-                .exceptionally(e -> {
-                    e.printStackTrace();
-                    return null;
-                });
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 429) {
+                LogUtils.getLogger().info("Rate limited. Retrying in {}s.", response.headers().firstValue("Retry-After").orElse("0"));
+                try {
+                    Thread.sleep(Long.parseLong(response.headers().firstValue("Retry-After").orElse("0")) * 1000);
+                } catch (InterruptedException ignored) {
+                }
+                send(message);
+            } else if (response.statusCode() != 204) {
+                LogUtils.getLogger().info("Failed to send message: {}", response.statusCode());
+                LogUtils.getLogger().info("Response: {}", response.body());
+            }
+        } catch (InterruptedException | IOException ignored) {
+        }
     }
 }
