@@ -60,6 +60,23 @@ public class HopperBlockEntityMixin {
                 e.printStackTrace();
             }
         }
+
+        /* 1.21.3
+        Holder<Item> item = null;
+        try {
+             item = BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(itemName)).orElseThrow();
+        } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+        }
+        if (item == null) return false;
+        List<TagKey<Item>> list = item.tags().toList();
+
+        for (TagKey<Item> tag : list) {
+            if (new ItemStack(item).is(tag)) {
+                return true;
+            }
+        }*/
+
         return false;
     }
 
@@ -68,7 +85,8 @@ public class HopperBlockEntityMixin {
     private static void addItem(Container container, ItemEntity itemEntity, CallbackInfoReturnable<Boolean> cir) {
         if (container instanceof HopperBlockEntity hopperBlockEntity) {
             if (hopperBlockEntity.getCustomName() != null) {
-                String itemName = getItemName(itemEntity.getItem().getDescriptionId());
+                //String itemName = getItemName(itemEntity.getItem().getDescriptionId());
+                String itemName = getItemName(itemEntity.getItem().getItem().getDescriptionId());
                 if (!filterMatch(hopperBlockEntity.getCustomName().getString(), itemName)) {
                     cir.cancel();
                 }
