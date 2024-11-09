@@ -30,6 +30,7 @@ import static net.minecraft.commands.Commands.literal;
 public class ServerMod implements ModInitializer {
     private static MinecraftServer _server;
     public static Webhook webhook;
+    public static Config config = new Config();
 
     public static MinecraftServer getServer() {
         return _server;
@@ -71,7 +72,7 @@ public class ServerMod implements ModInitializer {
             webhook.addToQueue(
                     new Message(
                             "Server",
-                            message.getString(),
+                            "<@&" + ServerMod.config.joinPingRoleId + ">: " + message.getString(),
                             "https://minecraft.wiki/images/Java_Edition_icon_3.png"
                     )
             );
@@ -101,7 +102,6 @@ public class ServerMod implements ModInitializer {
             }
         }
 
-        Config config = new Config();
         try {
             config = gson.fromJson(Files.readString(configFilePath), Config.class);
         } catch (IOException ignored) {
@@ -109,7 +109,15 @@ public class ServerMod implements ModInitializer {
 
         webhook = new Webhook(config.webhookUrl);
 
-        Thread thread = new Thread(webhook::sendQueue);
+        Thread thread = new Thread(() -> {
+            while (true) {
+                webhook.sendQueue();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        });
         thread.start();
     }
 }
