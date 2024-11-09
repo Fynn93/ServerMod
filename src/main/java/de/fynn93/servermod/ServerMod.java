@@ -8,6 +8,7 @@ import de.fynn93.servermod.discord.Webhook;
 import de.fynn93.servermod.util.DimensionUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -31,6 +32,8 @@ public class ServerMod implements ModInitializer {
     private static MinecraftServer _server;
     public static Webhook webhook;
     public static Config config = new Config();
+
+    public static JDA api;
 
     public static MinecraftServer getServer() {
         return _server;
@@ -67,7 +70,9 @@ public class ServerMod implements ModInitializer {
                 )
         );
 
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> _server = server);
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            _server = server;
+        });
         ServerMessageEvents.GAME_MESSAGE.register((server, message, overlay) -> {
             String username = "Server";
             String messageString = message.getString();
@@ -119,17 +124,27 @@ public class ServerMod implements ModInitializer {
         } catch (IOException ignored) {
         }
 
-        JDA api = JDABuilder
+        api = JDABuilder
                 .createLight(config.token)
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT)
                 .build();
         api.addEventListener(new MessageReceiver());
+        api.getPresence().setActivity(Activity.playing("Minecraft"));
 
         webhook = new Webhook(config.webhookUrl);
 
         Thread thread = new Thread(() -> {
             while (true) {
                 webhook.sendQueue();
+                if (_server != null)
+                    api.getPresence().setActivity(
+                            Activity.playing("Minecraft ("
+                                    + _server.getPlayerList().getPlayerCount()
+                                    + "/"
+                                    + _server.getPlayerList().getMaxPlayers()
+                                    + " online)"
+                            )
+                    );
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
