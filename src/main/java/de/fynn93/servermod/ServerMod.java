@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,8 +71,62 @@ public class ServerMod implements ModInitializer {
                 )
         );
 
+        Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
+        configPath.toFile().mkdirs();
+
+        Gson gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .create();
+
+        Path configFilePath = configPath.resolve("config.json");
+        if (!configFilePath.toFile().exists()) {
+            try {
+                Files.writeString(configFilePath, gson.toJson(new Config()));
+            } catch (IOException ignored) {
+            }
+        }
+
+        try {
+            config = gson.fromJson(Files.readString(configFilePath), Config.class);
+        } catch (IOException ignored) {
+        }
+
+        api = JDABuilder
+                .createLight(config.token)
+                .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+                .build();
+        api.addEventListener(new MessageReceiver());
+        api.getPresence().setActivity(Activity.playing("Minecraft"));
+
+        webhook = new Webhook(config.webhookUrl);
+
+        AtomicBoolean interrupted = new AtomicBoolean(false);
+        Thread thread = new Thread(() -> {
+            while (!interrupted.get()) {
+                webhook.sendQueue();
+                if (_server != null)
+                    api.getPresence().setActivity(
+                            Activity.playing("Minecraft ("
+                                    + _server.getPlayerList().getPlayerCount()
+                                    + "/"
+                                    + _server.getPlayerList().getMaxPlayers()
+                                    + " online)"
+                            )
+                    );
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        });
+        thread.start();
+
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             _server = server;
+        });
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            interrupted.set(true);
+            api.shutdownNow();
         });
         ServerMessageEvents.GAME_MESSAGE.register((server, message, overlay) -> {
             String username = "Server";
@@ -103,54 +158,5 @@ public class ServerMod implements ModInitializer {
                     )
             );
         });
-
-        Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
-        configPath.toFile().mkdirs();
-
-        Gson gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .create();
-
-        Path configFilePath = configPath.resolve("config.json");
-        if (!configFilePath.toFile().exists()) {
-            try {
-                Files.writeString(configFilePath, gson.toJson(new Config()));
-            } catch (IOException ignored) {
-            }
-        }
-
-        try {
-            config = gson.fromJson(Files.readString(configFilePath), Config.class);
-        } catch (IOException ignored) {
-        }
-
-        api = JDABuilder
-                .createLight(config.token)
-                .enableIntents(GatewayIntent.MESSAGE_CONTENT)
-                .build();
-        api.addEventListener(new MessageReceiver());
-        api.getPresence().setActivity(Activity.playing("Minecraft"));
-
-        webhook = new Webhook(config.webhookUrl);
-
-        Thread thread = new Thread(() -> {
-            while (true) {
-                webhook.sendQueue();
-                if (_server != null)
-                    api.getPresence().setActivity(
-                            Activity.playing("Minecraft ("
-                                    + _server.getPlayerList().getPlayerCount()
-                                    + "/"
-                                    + _server.getPlayerList().getMaxPlayers()
-                                    + " online)"
-                            )
-                    );
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-            }
-        });
-        thread.start();
     }
 }
