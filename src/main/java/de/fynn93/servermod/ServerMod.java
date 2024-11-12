@@ -17,6 +17,10 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,31 +48,45 @@ public class ServerMod implements ModInitializer {
     public void onInitialize() {
         // register commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                dispatcher.register(literal("b")
-                        .executes(context -> {
-                            Optional<GlobalPos> o = Objects.requireNonNull(context.getSource().getPlayer()).getLastDeathLocation();
-                            o.ifPresent(pos -> {
-                                /*context.getSource().getPlayer().teleport(
-                                        new TeleportTransition(
-                                                DimensionUtils.getDimension(pos.dimension().location()),
-                                                new Vec3(pos.pos().getX(), pos.pos().getY(), pos.pos().getZ()),
-                                                Vec3.ZERO,
-                                                0.0f, 0.0f,
-                                                Set.of(),
-                                                TeleportTransition.DO_NOTHING
-                                        )
-                                );*/
-                                context.getSource().getPlayer().teleportTo(
-                                        DimensionUtils.getDimension(pos.dimension().location()),
-                                        pos.pos().getX(),
-                                        pos.pos().getY(),
-                                        pos.pos().getZ(),
-                                        0.0f, 0.0f
-                                );
-                            });
-                            return 1;
-                        })
-                )
+                {
+                    dispatcher.register(literal("b")
+                            .executes(commandContext -> {
+                                Optional<GlobalPos> o = Objects.requireNonNull(commandContext.getSource().getPlayer()).getLastDeathLocation();
+                                o.ifPresent(pos -> {
+                                    /*commandContext.getSource().getPlayer().teleport(
+                                            new TeleportTransition(
+                                                    DimensionUtils.getDimension(pos.dimension().location()),
+                                                    new Vec3(pos.pos().getX(), pos.pos().getY(), pos.pos().getZ()),
+                                                    Vec3.ZERO,
+                                                    0.0f, 0.0f,
+                                                    Set.of(),
+                                                    TeleportTransition.DO_NOTHING
+                                            )
+                                    );*/
+                                    commandContext.getSource().getPlayer().teleportTo(
+                                            DimensionUtils.getDimension(pos.dimension().location()),
+                                            pos.pos().getX() - .5f,
+                                            pos.pos().getY(),
+                                            pos.pos().getZ() + .5f,
+                                            0.0f, 0.0f
+                                    );
+                                });
+                                return 1;
+                            })
+                    );
+                    dispatcher.register(literal("nv")
+                            .executes(commandContext -> {
+                                ServerPlayer player = commandContext.getSource().getPlayer();
+                                assert player != null;
+                                if (player.hasEffect(MobEffects.NIGHT_VISION)) {
+                                    player.removeEffect(MobEffects.NIGHT_VISION);
+                                    return 1;
+                                }
+                                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 255, false, false));
+                                return 1;
+                            })
+                    );
+                }
         );
 
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
