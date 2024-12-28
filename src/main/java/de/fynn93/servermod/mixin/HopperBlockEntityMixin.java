@@ -38,6 +38,8 @@ public class HopperBlockEntityMixin {
         return Arrays.stream(filter).anyMatch((filter_i) -> {
             if (filter_i.startsWith("$")) {
                 return tagMatch(itemName, filter_i.substring(1));
+            } else if (filter_i.startsWith("!")) {
+                return !FilenameUtils.wildcardMatch(itemName, filter_i.substring(1));
             }
             return FilenameUtils.wildcardMatch(itemName, filter_i);
         });
