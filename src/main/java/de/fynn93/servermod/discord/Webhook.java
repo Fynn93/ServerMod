@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,7 +17,7 @@ public class Webhook {
 
     public Webhook(String endpoint) {
         this.endpoint = endpoint;
-        messageQueue = new java.util.LinkedList<>();
+        messageQueue = new LinkedList<>();
     }
 
     public void addToQueue(Message message) {

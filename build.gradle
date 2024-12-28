@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.8-SNAPSHOT'
+    id 'fabric-loom' version '1.9-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -16,6 +16,15 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
+    maven {
+        url 'https://repo.bluecolored.de/releases'
+    }
+    maven {
+        url "https://maven.teamresourceful.com/repository/maven-public/"
+    }
+    flatDir {
+        dirs "${System.getenv("USERPROFILE")}/Cadmus/fabric/build/libs"
+    }
 }
 
 dependencies {
@@ -27,9 +36,20 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation("net.dv8tion:JDA:${project.jda_version}") {
-        exclude module: 'opus-java'
-    }
+    include "net.dv8tion:JDA:${project.jda_version}"
+    include "com.squareup.okio:okio:3.4.0"
+    include "com.squareup.okhttp3:okhttp:4.9.3"
+    include "org.apache.commons:commons-collections4:4.4"
+    include "org.jetbrains.kotlin:kotlin-stdlib:1.6.21"
+    include "com.neovisionaries:nv-websocket-client:2.14"
+    include "net.sf.trove4j:trove4j:3.0.3"
+    include "com.fasterxml.jackson.core:jackson-core:2.13.2"
+    include "com.fasterxml.jackson.core:jackson-databind:2.13.4.2"
+    include "com.fasterxml.jackson.core:jackson-annotations:2.13.2"
+    implementation "net.dv8tion:JDA:${project.jda_version}"
+
+    compileOnly "de.bluecolored:bluemap-api:${project.bluemap_version}"
+    modImplementation "earth.terrarium.cadmus:cadmus-fabric-${project.minecraft_version_major}:${project.cadmus_version}"
 }
 
 processResources {
