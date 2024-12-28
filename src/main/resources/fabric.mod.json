@@ -14,7 +14,7 @@
   "license": "MIT",
   "icon": "assets/servermod/icon.png",
   "accessWidener": "servermod.accesswidener",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "de.fynn93.servermod.ServerMod"

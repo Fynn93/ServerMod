@@ -15,6 +15,12 @@ import java.time.format.DateTimeFormatter;
 public class TimeDecorator implements ChatDecorator {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
+    @Override
+    public @NotNull MutableComponent decorate(@Nullable ServerPlayer serverPlayer, @NotNull Component component) {
+        assert serverPlayer != null;
+        return decorate(serverPlayer.getName().getString()).append(component.copy().withStyle(ChatFormatting.WHITE));
+    }
+
     public static MutableComponent decorate(String playerName) {
         MutableComponent playerNameComponent = MutableComponent.create(
                 new PlainTextContents.LiteralContents("<" + playerName + "> ")
@@ -31,9 +37,5 @@ public class TimeDecorator implements ChatDecorator {
         ).withStyle(ChatFormatting.DARK_GRAY);
     }
 
-    @Override
-    public @NotNull Component decorate(@Nullable ServerPlayer serverPlayer, @NotNull Component component) {
-        assert serverPlayer != null;
-        return decorate(serverPlayer.getName().getString()).append(component.copy().withStyle(ChatFormatting.WHITE));
-    }
+
 }
