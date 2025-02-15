@@ -17,25 +17,10 @@ public class TimeDecorator implements ChatDecorator {
 
     @Override
     public @NotNull MutableComponent decorate(@Nullable ServerPlayer serverPlayer, @NotNull Component component) {
-        assert serverPlayer != null;
-        return decorate(serverPlayer.getName().getString()).append(component.copy().withStyle(ChatFormatting.WHITE));
-    }
-
-    public static MutableComponent decorate(String playerName) {
-        MutableComponent playerNameComponent = MutableComponent.create(
-                new PlainTextContents.LiteralContents("<" + playerName + "> ")
-        ).withStyle(ChatFormatting.WHITE);
-
-        return decorate().append(playerNameComponent);
-    }
-
-    public static MutableComponent decorate() {
         String decoratedMessage = "[" + LocalDateTime.now().format(formatter) + "] ";
 
         return MutableComponent.create(
                 new PlainTextContents.LiteralContents(decoratedMessage)
         ).withStyle(ChatFormatting.DARK_GRAY);
     }
-
-
 }

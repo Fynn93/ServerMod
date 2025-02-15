@@ -5,10 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "AbstractVillagerMixin",
-    "BeaconBlockEntityMixin",
     "EntityMixin",
     "HopperBlockEntityMixin",
-    "ItemMixin",
     "LanguageMixin",
     "LeashableMixin",
     "MinecraftServerMixin",
