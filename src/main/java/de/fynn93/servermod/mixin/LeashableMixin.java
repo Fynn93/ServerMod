@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Leashable.class)
 public interface LeashableMixin {
     @Inject(method = "dropLeash(ZZ)V", at = @At("HEAD"), cancellable = true)
-    private void dropLeash(boolean bl, boolean bl2, CallbackInfo ci) {
+    private void dropLeash(boolean broadcastPacket, boolean dropItem, CallbackInfo ci) {
         // make leash never drop
         ci.cancel();
     }
