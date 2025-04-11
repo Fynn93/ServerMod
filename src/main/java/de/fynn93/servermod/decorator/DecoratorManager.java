@@ -31,7 +31,7 @@ public class DecoratorManager implements ChatDecorator {
         // Append player name
         base.append(MutableComponent.create(
                 new PlainTextContents.LiteralContents("<" + serverPlayer.getName().getString() + "> ")
-        ).withStyle(ChatFormatting.RESET));
+        ).append(component).withStyle(ChatFormatting.RESET));
         return base;
     }
 }
