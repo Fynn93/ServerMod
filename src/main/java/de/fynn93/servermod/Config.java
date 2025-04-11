@@ -12,6 +12,7 @@ public class Config {
 
     /// The default options for each player
     public PlayerPlayOptions defaultPlayerOptions = new PlayerPlayOptions();
+
     ///// Not used yet /////
     /// The date when the server will be opened
     public Date serverOpenDate = new Date();
