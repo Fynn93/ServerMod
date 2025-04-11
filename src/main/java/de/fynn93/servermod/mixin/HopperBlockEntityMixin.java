@@ -66,25 +66,27 @@ public class HopperBlockEntityMixin {
     // pick up items
     @Inject(method = "addItem(Lnet/minecraft/world/Container;Lnet/minecraft/world/entity/item/ItemEntity;)Z", at = @At("HEAD"))
     private static void addItem(Container container, ItemEntity itemEntity, CallbackInfoReturnable<Boolean> cir) {
-        if (container instanceof HopperBlockEntity hopperBlockEntity) {
-            if (hopperBlockEntity.getCustomName() != null) {
-                String itemName = getItemName(itemEntity.getItem().getItem().getDescriptionId());
-                if (!filterMatch(hopperBlockEntity.getCustomName().getString(), itemName)) {
-                    cir.cancel();
-                }
-            }
+        if (!(container instanceof HopperBlockEntity hopperBlockEntity) || hopperBlockEntity.getCustomName() == null) {
+            return;
         }
+
+        String itemName = getItemName(itemEntity.getItem().getItem().getDescriptionId());
+        if (filterMatch(hopperBlockEntity.getCustomName().getString(), itemName)) {
+            return;
+        }
+        cir.cancel();
     }
 
     // transfer items
     @Inject(method = "addItem(Lnet/minecraft/world/Container;Lnet/minecraft/world/Container;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/Direction;)Lnet/minecraft/world/item/ItemStack;", at = @At("HEAD"), cancellable = true)
     private static void addItem(Container container, Container container2, ItemStack itemStack, Direction direction, CallbackInfoReturnable<ItemStack> cir) {
-        if (container2 instanceof HopperBlockEntity hopperBlockEntity) {
-            if (hopperBlockEntity.getCustomName() != null) {
-                if (!filterMatch(hopperBlockEntity.getCustomName().getString(), getItemName(itemStack.getItem().getDescriptionId()))) {
-                    cir.setReturnValue(itemStack);
-                }
-            }
+        if (!(container2 instanceof HopperBlockEntity hopperBlockEntity) || hopperBlockEntity.getCustomName() == null) {
+            return;
         }
+        if (filterMatch(hopperBlockEntity.getCustomName().getString(), getItemName(itemStack.getItem().getDescriptionId()))) {
+            return;
+        }
+
+        cir.setReturnValue(itemStack);
     }
 }
