@@ -5,12 +5,12 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "AbstractVillagerMixin",
-    "EntityMixin",
     "HopperBlockEntityMixin",
-    "LanguageMixin",
     "LeashableMixin",
     "MinecraftServerMixin",
-    "ServerGamePacketListenerImplMixin"
+    "PlayerMixin",
+    "ServerGamePacketListenerImplMixin",
+    "ShearsDispenserBehaviorMixin"
   ],
   "injectors": {
     "defaultRequire": 1
