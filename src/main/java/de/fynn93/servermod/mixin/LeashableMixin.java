@@ -9,12 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Leashable.class)
 public interface LeashableMixin {
-    @Inject(method = "dropLeash(Lnet/minecraft/world/entity/Entity;ZZ)V", at = @At("HEAD"), cancellable = true)
-    private static <E extends Entity & Leashable> void dropLeash(E entity, boolean broadcastPacket, boolean dropItem, CallbackInfo ci) {
-        // make leash never drop
-        ci.cancel();
-    }
-
     @Inject(method = "leashTooFarBehaviour", at = @At("HEAD"))
     private void leashTooFarBehaviour(CallbackInfo ci) {
         Entity entity = ((Leashable) this).getLeashHolder();
