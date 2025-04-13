@@ -33,14 +33,24 @@ public class HopperBlockEntityMixin {
     }
 
     @Unique
-    private static boolean filterMatch(String filterString, String fullItemName) {
+    private static boolean filterMatch(String filterString, String fullItemName, String itemCustomName) {
         String itemName = getItemName(fullItemName);
         String[] filter = filterString.split(",");
         return Arrays.stream(filter).anyMatch((filter_i) -> {
             if (filter_i.startsWith("$")) {
+                // check for tag match
+                // format: $tag
+                // example: $cobblestone
                 return tagMatch(itemName, filter_i.substring(1));
             } else if (filter_i.startsWith("!")) {
+                // invert match
+                // example: !netherite_sword
                 return !FilenameUtils.wildcardMatch(itemName, filter_i.substring(1));
+            } else if (filter_i.contains("=")) {
+                // check for name match
+                // format: type=name
+                // example: netherite_sword=Destroyer of worlds
+                return nameMatch(itemName, filter_i, itemCustomName);
             }
             return FilenameUtils.wildcardMatch(itemName, filter_i);
         });
@@ -63,15 +73,32 @@ public class HopperBlockEntityMixin {
         return false;
     }
 
+    @Unique
+    private static boolean nameMatch(String itemName, String filterI, String itemCustomName) {
+        Optional<Reference<Item>> itemOptional = BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(itemName));
+        if (itemOptional.isEmpty()) return false;
+
+        Item item = itemOptional.get().value();
+
+        String[] split = filterI.split("=");
+        if (split.length != 2) return false;
+
+        String filterCustomName = split[1];
+        return itemCustomName.equals(filterCustomName);
+    }
+
     // pick up items
     @Inject(method = "addItem(Lnet/minecraft/world/Container;Lnet/minecraft/world/entity/item/ItemEntity;)Z", at = @At("HEAD"))
     private static void addItem(Container container, ItemEntity itemEntity, CallbackInfoReturnable<Boolean> cir) {
         if (!(container instanceof HopperBlockEntity hopperBlockEntity) || hopperBlockEntity.getCustomName() == null) {
             return;
         }
-
+        String itemCustomName = "";
+        if (itemEntity.getCustomName() != null) {
+            itemCustomName = itemEntity.getCustomName().getString();
+        }
         String itemName = getItemName(itemEntity.getItem().getItem().getDescriptionId());
-        if (filterMatch(hopperBlockEntity.getCustomName().getString(), itemName)) {
+        if (filterMatch(hopperBlockEntity.getCustomName().getString(), itemName, itemCustomName)) {
             return;
         }
         cir.cancel();
@@ -83,7 +110,11 @@ public class HopperBlockEntityMixin {
         if (!(container2 instanceof HopperBlockEntity hopperBlockEntity) || hopperBlockEntity.getCustomName() == null) {
             return;
         }
-        if (filterMatch(hopperBlockEntity.getCustomName().getString(), getItemName(itemStack.getItem().getDescriptionId()))) {
+        String itemCustomName = "";
+        if (itemStack.getCustomName() != null) {
+            itemCustomName = itemStack.getCustomName().getString();
+        }
+        if (filterMatch(hopperBlockEntity.getCustomName().getString(), getItemName(itemStack.getItem().getDescriptionId()), itemCustomName)) {
             return;
         }
 
