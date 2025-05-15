@@ -1,7 +1,10 @@
 package de.fynn93.servermod;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class Config {
     /// Player UUID -> PlayerPlayOptions
@@ -10,8 +13,6 @@ public class Config {
 
     /// Whether the server allows authentication for the web interface
     public boolean authEnabled = false;
-
-    public List<String> admins = new ArrayList<>();
 
     /// The date when the server will be opened
     public Date serverOpenDate = new Date();

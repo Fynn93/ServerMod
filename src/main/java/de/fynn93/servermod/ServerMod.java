@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.DispenserBlock;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 
 import static net.minecraft.commands.Commands.literal;
 
@@ -145,7 +146,7 @@ public class ServerMod implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            if (config.serverOpenDate.after(new java.util.Date()) && !handler.getPlayer().hasPermissions(2)) {
+            if (config.serverOpenDate.after(new Date()) && !handler.getPlayer().hasPermissions(2)) {
                 var reason = MutableComponent.create(new PlainTextContents.LiteralContents("Der Server ist noch nicht geöffnet!\n"))
                         .append("Der Server öffnet am ")
                         .append(MutableComponent.create(
