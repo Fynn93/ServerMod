@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
@@ -19,6 +20,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
+import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -41,46 +43,7 @@ public class ServerMod implements ModInitializer {
         return _server;
     }
 
-    @Override
-    public void onInitialize() {
-        DecoratorManager.registerDecorator(new TimeDecorator());
-
-        // register commands
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-                dispatcher.register(literal("nv")
-                        .executes(commandContext -> {
-                            ServerPlayer player = commandContext.getSource().getPlayer();
-                            assert player != null;
-                            if (player.hasEffect(MobEffects.NIGHT_VISION)) {
-                                player.removeEffect(MobEffects.NIGHT_VISION);
-                                return 1;
-                            }
-                            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 255, false, false));
-                            return 1;
-                        })
-                );
-                    if (config.authEnabled)
-                        dispatcher.register(literal("auth")
-                                .executes(commandContext -> {
-                                    ServerPlayer player = commandContext.getSource().getPlayer();
-                                    assert player != null;
-                                    var component = MutableComponent.create(new PlainTextContents.LiteralContents("Drücke "))
-                                            .append(MutableComponent.create(new PlainTextContents.LiteralContents("hier"))
-                                                    .withStyle(style -> style.withClickEvent(
-                                                            new ClickEvent(
-                                                                    ClickEvent.Action.OPEN_URL,
-                                                                    "https://fynn93.dev/minecraft/authenticate.php?code=%s"
-                                                                            .formatted(CodeGenerator.generate(player))
-                                                            )
-                                                    ).withUnderlined(true).withBold(true).withColor(ChatFormatting.GREEN))
-                                            ).append(" um dich zu authentifizieren!");
-                                    player.sendSystemMessage(component);
-                                    return 1;
-                                })
-                        );
-                }
-        );
-
+    public static void loadConfig() {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
         configPath.toFile().mkdirs();
 
@@ -105,6 +68,56 @@ public class ServerMod implements ModInitializer {
             config = gson.fromJson(Files.readString(configFilePath), Config.class);
         } catch (IOException ignored) {
         }
+    }
+
+    @Override
+    public void onInitialize() {
+        DecoratorManager.registerDecorator(new TimeDecorator());
+
+        // register commands
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+                dispatcher.register(literal("nv")
+                        .executes(commandContext -> {
+                            ServerPlayer player = commandContext.getSource().getPlayer();
+                            assert player != null;
+                            if (player.hasEffect(MobEffects.NIGHT_VISION)) {
+                                player.removeEffect(MobEffects.NIGHT_VISION);
+                                return 1;
+                            }
+                            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 255, false, false));
+                            return 1;
+                        })
+                );
+            dispatcher.register(literal("servermodreload")
+                    .requires(source -> source.hasPermission(2))
+                    .executes(commandContext -> {
+                        loadConfig();
+                        return 1;
+                    })
+            );
+            if (config.authEnabled) {
+                dispatcher.register(literal("auth")
+                        .executes(commandContext -> {
+                            ServerPlayer player = commandContext.getSource().getPlayer();
+                            assert player != null;
+                            var component = MutableComponent.create(new PlainTextContents.LiteralContents("Drücke "))
+                                    .append(MutableComponent.create(new PlainTextContents.LiteralContents("hier"))
+                                            .withStyle(style -> style.withClickEvent(
+                                                    new ClickEvent(
+                                                            ClickEvent.Action.OPEN_URL,
+                                                            "https://fynn93.dev/minecraft/authenticate.php?code=%s"
+                                                                    .formatted(CodeGenerator.generate(player))
+                                                    )
+                                            ).withUnderlined(true).withBold(true).withColor(ChatFormatting.GREEN))
+                                    ).append(" um dich zu authentifizieren!");
+                            player.sendSystemMessage(component);
+                            return 1;
+                        })
+                );
+                }
+        });
+
+        loadConfig();
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             _server = server;
@@ -129,6 +142,20 @@ public class ServerMod implements ModInitializer {
                     .append(String.valueOf(o.pos().getZ()))
                     .append(" gestorben!")
             );
+        });
+
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            if (config.serverOpenDate.after(new java.util.Date())) {
+                var reason = MutableComponent.create(new PlainTextContents.LiteralContents("Der Server ist noch nicht geöffnet!\n"))
+                        .append("Der Server öffnet am ")
+                        .append(MutableComponent.create(
+                                new PlainTextContents.LiteralContents(config.serverOpenDate.toString())
+                        ).withStyle(style -> style.withColor(ChatFormatting.GREEN)))
+                        .append("!");
+
+                ClientboundDisconnectPacket packet = new ClientboundDisconnectPacket(reason);
+                handler.send(packet);
+            }
         });
     }
 }
