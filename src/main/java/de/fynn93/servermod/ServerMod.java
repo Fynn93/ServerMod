@@ -145,7 +145,7 @@ public class ServerMod implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            if (config.serverOpenDate.after(new java.util.Date())) {
+            if (config.serverOpenDate.after(new java.util.Date()) && !handler.getPlayer().hasPermissions(2)) {
                 var reason = MutableComponent.create(new PlainTextContents.LiteralContents("Der Server ist noch nicht geöffnet!\n"))
                         .append("Der Server öffnet am ")
                         .append(MutableComponent.create(
