@@ -71,6 +71,25 @@ public class ServerMod implements ModInitializer {
         }
     }
 
+    public static void saveConfig() {
+        Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
+        configPath.toFile().mkdirs();
+
+        Gson gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .setDateFormat("yyyy-MM-dd HH:mm:ss")
+                .serializeNulls()
+                .create();
+
+        Path configFilePath = configPath.resolve("config.json");
+
+        // Save config
+        try {
+            Files.writeString(configFilePath, gson.toJson(config));
+        } catch (IOException ignored) {
+        }
+    }
+
     @Override
     public void onInitialize() {
         DecoratorManager.registerDecorator(new TimeDecorator());
@@ -93,6 +112,13 @@ public class ServerMod implements ModInitializer {
                     .requires(source -> source.hasPermission(2))
                     .executes(commandContext -> {
                         loadConfig();
+                        return 1;
+                    })
+            );
+            dispatcher.register(literal("servermodsave")
+                    .requires(source -> source.hasPermission(2))
+                    .executes(commandContext -> {
+                        saveConfig();
                         return 1;
                     })
             );
@@ -130,6 +156,11 @@ public class ServerMod implements ModInitializer {
             });
         });
 
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            _server = null;
+            saveConfig();
+        });
+
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
             if (newPlayer.getLastDeathLocation().isEmpty()) {
                 return;
@@ -146,6 +177,7 @@ public class ServerMod implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerMod.config.playerOptions.computeIfAbsent(handler.getPlayer().getUUID(), k -> ServerMod.config.defaultPlayerOptions);
             if (config.serverOpenDate.after(new Date()) && !handler.getPlayer().hasPermissions(2)) {
                 var reason = MutableComponent.create(new PlainTextContents.LiteralContents("Der Server ist noch nicht geöffnet!\n"))
                         .append("Der Server öffnet am ")
