@@ -5,15 +5,18 @@ import com.google.gson.GsonBuilder;
 import de.fynn93.servermod.decorator.DecoratorManager;
 import de.fynn93.servermod.decorator.TimeDecorator;
 import de.fynn93.servermod.dispenser.DispenserBehavior;
+import de.fynn93.servermod.web.CodeGenerator;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.server.MinecraftServer;
@@ -43,7 +46,7 @@ public class ServerMod implements ModInitializer {
         DecoratorManager.registerDecorator(new TimeDecorator());
 
         // register commands
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
                 dispatcher.register(literal("nv")
                         .executes(commandContext -> {
                             ServerPlayer player = commandContext.getSource().getPlayer();
@@ -55,7 +58,27 @@ public class ServerMod implements ModInitializer {
                             player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 255, false, false));
                             return 1;
                         })
-                )
+                );
+                    if (config.authEnabled)
+                        dispatcher.register(literal("auth")
+                                .executes(commandContext -> {
+                                    ServerPlayer player = commandContext.getSource().getPlayer();
+                                    assert player != null;
+                                    var component = MutableComponent.create(new PlainTextContents.LiteralContents("Drücke "))
+                                            .append(MutableComponent.create(new PlainTextContents.LiteralContents("hier"))
+                                                    .withStyle(style -> style.withClickEvent(
+                                                            new ClickEvent(
+                                                                    ClickEvent.Action.OPEN_URL,
+                                                                    "https://fynn93.dev/minecraft/authenticate.php?code=%s"
+                                                                            .formatted(CodeGenerator.generate(player))
+                                                            )
+                                                    ).withUnderlined(true).withBold(true).withColor(ChatFormatting.GREEN))
+                                            ).append(" um dich zu authentifizieren!");
+                                    player.sendSystemMessage(component);
+                                    return 1;
+                                })
+                        );
+                }
         );
 
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("servermod");
