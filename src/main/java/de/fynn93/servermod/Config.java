@@ -1,5 +1,6 @@
 package de.fynn93.servermod;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,13 +14,12 @@ public class Config {
     /// Whether the server allows authentication for the web interface
     public boolean authEnabled = false;
 
-    ///// Not used yet /////
     /// The date when the server will be opened
     public Date serverOpenDate = new Date();
 
     /// The date when the end will be opened
     /// This is set to 7 days after the server is started
-    public Date endOpenDate = new Date(new Date().toInstant().plusSeconds(60 * 60 * 24 * 7).toEpochMilli());
+    public Date endOpenDate = Date.from(Instant.now().plusSeconds(60 * 60 * 24 * 7));
 
     /// The default options for each player
     public PlayerPlayOptions defaultPlayerOptions = new PlayerPlayOptions();
