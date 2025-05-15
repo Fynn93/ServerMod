@@ -15,7 +15,6 @@ public class PlayerMixin {
     public void dropEquipment(CallbackInfo ci) {
         Player player = (Player) (Object) this;
         UUID uuid = player.getUUID();
-        ServerMod.config.playerOptions.computeIfAbsent(uuid, k -> ServerMod.config.defaultPlayerOptions);
 
         // Check if the player has the keepInventory option enabled
         if (ServerMod.config.playerOptions.get(uuid).enableKeepInventory) {
